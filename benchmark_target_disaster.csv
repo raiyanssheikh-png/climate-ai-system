@@ -1,0 +1,6 @@
+Model,F1,Train_s
+Random Forest,0.9998,301.0
+LightGBM,0.9993,159.1
+XGBoost,0.999,228.8
+CatBoost,0.9978,333.6
+Logistic Regression,0.9879,73.1

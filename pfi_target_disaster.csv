@@ -1,0 +1,16 @@
+Feature,PFI
+precipitation,0.05033076526331559
+temperature_2m,0.03441975446787956
+longitude,0.006585561045804063
+climate_zone_id,0.0025895393684637336
+temperature_2m_roll_24h_std,0.0011839526750975586
+precipitation_roll_24h_mean,0.0005049820621781201
+surface_pressure_lag_24h,0.00033525995357567656
+dryness_index,5.989059481126269e-06
+relative_humidity_2m_lag_24h,1.9702845511411957e-06
+city_id,1.9702845511411957e-06
+hour,0.0
+precipitation_roll_7d_mean,0.0
+surface_pressure_lag_72h,0.0
+temperature_2m_roll_24h_mean,0.0
+shortwave_radiation,0.0

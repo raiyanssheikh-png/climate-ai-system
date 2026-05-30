@@ -1,0 +1,16 @@
+,Feature,IG_Attribution
+1,temperature_2m,16.174
+2,dryness_index,4.767
+3,heat_index,1.4319
+4,relative_humidity_2m,-1.3474
+5,year,1.1853
+6,temp_range_24h,0.8338
+7,temperature_2m_roll_24h_std,0.6585
+8,city_id,-0.5598
+9,coastal,0.5309
+10,temperature_2m_roll_7d_std,0.3664
+11,precipitation_roll_7d_mean,0.3565
+12,day_of_year,0.3294
+13,precipitation,-0.3281
+14,pressure_tendency,-0.2878
+15,continent_id,0.2726

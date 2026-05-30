@@ -1,0 +1,16 @@
+,Feature,PFI_Importance,PFI_Std
+1,temperature_2m,0.9501,0.0134
+2,longitude,0.1807,0.0223
+3,precipitation_roll_24h_mean,0.0,0.0
+4,windspeed_10m_lag_72h,0.0,0.0
+5,surface_pressure_lag_24h,0.0,0.0
+6,surface_pressure_lag_48h,0.0,0.0
+7,surface_pressure_lag_72h,0.0,0.0
+8,temperature_2m_roll_24h_mean,0.0,0.0
+9,temperature_2m_roll_24h_std,0.0,0.0
+10,temperature_2m_roll_7d_mean,0.0,0.0
+11,temperature_2m_roll_7d_std,0.0,0.0
+12,relative_humidity_2m_roll_24h_mean,0.0,0.0
+13,relative_humidity_2m_roll_24h_std,0.0,0.0
+14,relative_humidity_2m_roll_7d_mean,0.0,0.0
+15,relative_humidity_2m_roll_7d_std,0.0,0.0

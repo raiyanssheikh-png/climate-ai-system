@@ -1,0 +1,16 @@
+Feature,Mean_Abs_SHAP
+precipitation,0.5579699669017003
+cloudcover,0.2812893793891396
+temperature_2m,0.27554562230253776
+surface_pressure_lag_24h,0.1765748353250003
+heat_index,0.1396922001540957
+precipitation_roll_24h_std,0.12029610863353085
+relative_humidity_2m_lag_24h,0.11862361473532856
+surface_pressure_lag_48h,0.11543966815357326
+precipitation_roll_7d_mean,0.10960378737497568
+temperature_2m_lag_24h,0.10790663797917661
+precipitation_roll_7d_std,0.10716823266266753
+relative_humidity_2m,0.10452012727350853
+temperature_2m_roll_24h_std,0.10186493988448114
+temperature_2m_lag_72h,0.10053947310728026
+relative_humidity_2m_roll_24h_mean,0.09761155438094776

@@ -1,0 +1,16 @@
+Feature,PFI
+precipitation,0.9869281045751634
+temperature_2m,0.0
+precipitation_roll_24h_std,0.0
+windspeed_10m_lag_72h,0.0
+surface_pressure_lag_24h,0.0
+surface_pressure_lag_48h,0.0
+surface_pressure_lag_72h,0.0
+temperature_2m_roll_24h_mean,0.0
+temperature_2m_roll_24h_std,0.0
+temperature_2m_roll_7d_mean,0.0
+temperature_2m_roll_7d_std,0.0
+relative_humidity_2m_roll_24h_mean,0.0
+relative_humidity_2m_roll_24h_std,0.0
+relative_humidity_2m_roll_7d_mean,0.0
+relative_humidity_2m_roll_7d_std,0.0

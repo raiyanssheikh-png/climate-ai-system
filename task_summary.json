@@ -1,0 +1,24 @@
+{
+  "temperature": {
+    "champion": "LightGBM",
+    "metric": "R\u00b2",
+    "value": 0.9965,
+    "rmse": 0.65
+  },
+  "heatwave": {
+    "champion": "LightGBM (tuned)",
+    "metric": "F1",
+    "value": 0.9942,
+    "auc": 1.0
+  },
+  "rainfall": {
+    "champion": "LightGBM",
+    "metric": "F1",
+    "value": 1.0
+  },
+  "disaster": {
+    "champion": "LightGBM",
+    "metric": "Weighted F1",
+    "value": 0.9993
+  }
+}

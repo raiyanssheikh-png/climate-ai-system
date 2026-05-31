@@ -1,0 +1,16 @@
+Horizon,Model,RMSE,R2
+30d,Ridge,3.884,0.8577
+30d,RandomForest,3.078,0.9107
+30d,XGBoost,3.003,0.915
+30d,LightGBM,3.001,0.9151
+30d,CatBoost,2.924,0.9194
+60d,Ridge,5.272,0.7282
+60d,RandomForest,3.143,0.9034
+60d,XGBoost,2.989,0.9127
+60d,LightGBM,2.978,0.9133
+60d,CatBoost,2.931,0.916
+90d,Ridge,6.508,0.5791
+90d,RandomForest,3.084,0.9055
+90d,XGBoost,2.991,0.9111
+90d,LightGBM,2.99,0.9112
+90d,CatBoost,2.919,0.9153

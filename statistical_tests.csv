@@ -1,0 +1,8 @@
+Test,Task,Statistic,p_value,Significant
+Wilcoxon,Temp 30d,30690231.0,0.00e+00,YES ***
+Wilcoxon,Temp 60d,16331816.0,0.00e+00,YES ***
+Wilcoxon,Temp 90d,10274799.0,0.00e+00,YES ***
+McNemar,Heatwave 90d,367.2,7.79e-82,YES ***
+McNemar,Rain 90d,1295.0,1.37e-283,YES ***
+McNemar,Disaster 90d,29.3,6.10e-08,YES ***
+Paired t-test,Temp 90d MSE,-68.44,0.00e+00,YES ***

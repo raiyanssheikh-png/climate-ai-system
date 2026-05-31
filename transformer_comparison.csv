@@ -1,0 +1,4 @@
+Model,RMSE,R2,Train_Time_s,Type
+CatBoost,2.924,0.9194,8.0,Gradient Boosting
+LightGBM,3.001,0.9151,2.0,Gradient Boosting
+Transformer,3.882,0.8579,630.0,Neural Network

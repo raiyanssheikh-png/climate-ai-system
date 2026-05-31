@@ -1,0 +1,13 @@
+Task,Metric,Train,Test,Gap,Verdict
+Temp 30d,R²,0.9492,0.9153,0.0339,Good Fit
+Temp 60d,R²,0.9502,0.9137,0.0365,Good Fit
+Temp 90d,R²,0.9512,0.912,0.0392,Good Fit
+Heatwave 30d,F1,0.8436,0.789,0.0546,Good Fit
+Heatwave 60d,F1,0.849,0.7657,0.0834,Slight Overfit
+Heatwave 90d,F1,0.8439,0.772,0.0719,Good Fit
+Rain 30d,F1,0.3944,0.3154,0.0791,Good Fit
+Rain 60d,F1,0.3825,0.3117,0.0708,Good Fit
+Rain 90d,F1,0.3889,0.3062,0.0827,Slight Overfit
+Disaster 30d,F1,0.6046,0.5494,0.0552,Good Fit
+Disaster 60d,F1,0.6047,0.5456,0.059,Good Fit
+Disaster 90d,F1,0.5958,0.5424,0.0533,Good Fit

@@ -53,10 +53,26 @@ def exp(t): st.markdown(f'<div class="exp">💡 {t}</div>', unsafe_allow_html=Tr
 # ── Locate project ─────────────────────────────────────────────
 @st.cache_data
 def find_dirs():
-    for base in [Path.home()/"weather_v2", Path.cwd(), Path.cwd().parent]:
+    candidates = [
+        Path.home()/"weather_v2",
+        Path.cwd(),
+        Path.cwd().parent,
+        Path(__file__).resolve().parent,
+        Path(__file__).resolve().parent.parent,
+    ]
+    for base in candidates:
+        models = base/"models"
+        proc   = base/"data"/"processed"
+        if models.exists() and (proc/"daily_forecast.csv.gz").exists():
+            return models, proc
+    # fallback: search for the data file anywhere under home
+    for p in (Path.home()).rglob("daily_forecast.csv.gz"):
+        proc = p.parent
+        base = proc.parent.parent            # .../weather_v2
         if (base/"models").exists():
-            return base/"models", base/"data"/"processed"
-    return Path("models"), Path("data/processed")
+            return base/"models", proc
+    # last resort: return best guess (will error with a clear message)
+    return Path.home()/"weather_v2"/"models", Path.home()/"weather_v2"/"data"/"processed"
 
 @st.cache_data
 def load_meta(proc_dir):
@@ -137,7 +153,10 @@ def main():
         meta=load_meta(proc_dir); models=load_models(models_dir)
     except Exception as e:
         st.error(f"Could not load models/metadata: {e}")
-        st.info("Make sure this runs inside your weather_v2 project (models/ folder present).")
+        st.info(f"Looked for models in: `{models_dir}`\n\nLooked for data in: `{proc_dir}`")
+        st.info("Fix: either run `streamlit run app_live.py` from inside your "
+                "`weather_v2` folder, or make sure that folder contains `models/` "
+                "and `data/processed/daily_forecast.csv.gz`.")
         st.stop()
 
     with st.sidebar:

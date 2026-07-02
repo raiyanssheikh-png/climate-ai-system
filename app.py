@@ -50,44 +50,45 @@ FEATURES = ['latitude','longitude','coastal','climate_zone_id','continent_id','c
 
 def exp(t): st.markdown(f'<div class="exp">💡 {t}</div>', unsafe_allow_html=True)
 
-# ── Locate project ─────────────────────────────────────────────
+# ── Locate files (FLAT repo: everything sits next to app.py) ──
 @st.cache_data
-def find_dirs():
-    candidates = [
-        Path.home()/"weather_v2",
-        Path.cwd(),
-        Path.cwd().parent,
-        Path(__file__).resolve().parent,
-        Path(__file__).resolve().parent.parent,
-    ]
+def find_base():
+    here = Path(__file__).resolve().parent
+    candidates = [here, Path.cwd(), Path.home()/"weather_v2"]
     for base in candidates:
-        models = base/"models"
-        proc   = base/"data"/"processed"
-        if models.exists() and (proc/"daily_forecast.csv.gz").exists():
-            return models, proc
-    # fallback: search for the data file anywhere under home
-    for p in (Path.home()).rglob("daily_forecast.csv.gz"):
-        proc = p.parent
-        base = proc.parent.parent            # .../weather_v2
-        if (base/"models").exists():
-            return base/"models", proc
-    # last resort: return best guess (will error with a clear message)
-    return Path.home()/"weather_v2"/"models", Path.home()/"weather_v2"/"data"/"processed"
+        # flat layout: models + metadata csv in the same folder
+        if (base/"forecast_temp_30d.pkl").exists():
+            return base
+        # nested layout (laptop): models/ subfolder
+        if (base/"models"/"forecast_temp_30d.pkl").exists():
+            return base/"models"
+    return here
 
 @st.cache_data
-def load_meta(proc_dir):
-    p = proc_dir/"daily_forecast.csv.gz"
-    df = pd.read_csv(p, usecols=["city","latitude","longitude","coastal",
+def find_meta_csv(base):
+    # metadata city table — try flat names, then nested
+    for cand in [base/"daily_forecast.csv.gz",
+                 base/"daily_forecast_sample.csv.gz",
+                 base.parent/"data"/"processed"/"daily_forecast.csv.gz",
+                 Path(__file__).resolve().parent/"daily_forecast.csv.gz",
+                 Path(__file__).resolve().parent/"daily_forecast_sample.csv.gz"]:
+        if cand.exists():
+            return cand
+    return None
+
+@st.cache_data
+def load_meta(meta_path):
+    df = pd.read_csv(meta_path, usecols=["city","latitude","longitude","coastal",
                      "climate_zone_id","continent_id","city_id"], low_memory=False)
     return df.drop_duplicates("city").set_index("city")
 
 @st.cache_resource
-def load_models(models_dir):
+def load_models(base):
     m={}
     for h in [30,60,90]:
-        m[f"temp_{h}"]=joblib.load(models_dir/f"forecast_temp_{h}d.pkl")
+        m[f"temp_{h}"]=joblib.load(base/f"forecast_temp_{h}d.pkl")
         for t in ["heatwave","rain","disaster"]:
-            p=models_dir/f"forecast_{t}_{h}d.pkl"
+            p=base/f"forecast_{t}_{h}d.pkl"
             if p.exists(): m[f"{t}_{h}"]=joblib.load(p)
     return m
 
@@ -144,19 +145,24 @@ def predict_city(models, X):
 
 # ── App ────────────────────────────────────────────────────────
 def main():
-    models_dir, proc_dir = find_dirs()
+    base = find_base()
+    meta_path = find_meta_csv(base)
     st.markdown('<div class="hdr">🌦️ Climate AI — Live Weather Forecast</div>', unsafe_allow_html=True)
     st.markdown(f'<div class="sub">Forecasting 30 / 60 / 90 days ahead · 10 climate-diverse cities · '
                 f'Generated {datetime.now().date()}</div>', unsafe_allow_html=True)
 
+    if meta_path is None:
+        st.error("City metadata file not found.")
+        st.info(f"Looked next to the app in: `{base}`")
+        st.info("Fix: upload `daily_forecast.csv.gz` (or `daily_forecast_sample.csv.gz`) "
+                "to the same folder as app.py in your repo.")
+        st.stop()
     try:
-        meta=load_meta(proc_dir); models=load_models(models_dir)
+        meta=load_meta(meta_path); models=load_models(base)
     except Exception as e:
         st.error(f"Could not load models/metadata: {e}")
-        st.info(f"Looked for models in: `{models_dir}`\n\nLooked for data in: `{proc_dir}`")
-        st.info("Fix: either run `streamlit run app_live.py` from inside your "
-                "`weather_v2` folder, or make sure that folder contains `models/` "
-                "and `data/processed/daily_forecast.csv.gz`.")
+        st.info(f"Base folder: `{base}`\n\nMetadata: `{meta_path}`")
+        st.info("Fix: make sure the 12 `forecast_*.pkl` files are uploaded next to app.py.")
         st.stop()
 
     with st.sidebar:

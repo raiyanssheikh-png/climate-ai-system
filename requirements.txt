@@ -1,7 +1,8 @@
 streamlit
 pandas
 numpy
-plotly
-joblib
 scikit-learn
 lightgbm
+joblib
+requests
+plotly

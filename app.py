@@ -311,9 +311,17 @@ def main():
                         "Disaster %":round(p.get("disaster",0)*100)})
                 prog.progress((i+1)/len(CITIES),f"{c} done")
             dfc=pd.DataFrame(rows)
-            st.dataframe(dfc.style.background_gradient(subset=["Temp (°C)"],cmap="RdYlBu_r")
-                         .background_gradient(subset=["Heatwave %","Rain %","Disaster %"],cmap="OrRd"),
-                         use_container_width=True,hide_index=True)
+            st.dataframe(
+                dfc, use_container_width=True, hide_index=True,
+                column_config={
+                    "Temp (°C)": st.column_config.NumberColumn("Temp (°C)", format="%.1f°"),
+                    "Heatwave %": st.column_config.ProgressColumn(
+                        "Heatwave %", format="%d%%", min_value=0, max_value=100),
+                    "Rain %": st.column_config.ProgressColumn(
+                        "Rain %", format="%d%%", min_value=0, max_value=100),
+                    "Disaster %": st.column_config.ProgressColumn(
+                        "Disaster %", format="%d%%", min_value=0, max_value=100),
+                })
             fig=go.Figure(go.Bar(x=dfc["City"],y=dfc["Temp (°C)"],
                 marker=dict(color=dfc["Temp (°C)"],colorscale=[[0,CLR["rain"]],[1,CLR["temp"]]]),
                 text=dfc["Temp (°C)"],textposition="outside"))

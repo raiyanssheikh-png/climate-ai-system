@@ -1,51 +1,21 @@
-# 🌦️ Climate AI — Extreme Weather Prediction System (v2)
+# 🌦️ Climate AI — Multi-Horizon Extreme Weather Forecasting System
 
-An industry-level machine-learning system that predicts extreme weather events across **20 global cities** and produces a **seasonal disaster-risk forecast**. Built as a Final Year Project at Sindh Madressatul Islam University (SMIU), Karachi.
+A machine-learning system that forecasts **temperature, heatwaves, heavy rainfall, and extreme-weather events** 30, 60, and 90 days ahead for 10 climate-diverse cities worldwide — with a live, interactive dashboard.
 
-**Authors:** Syed Bilal · Raiyan Sheikh · Numra Amjad
+**Final Year Project** · Department of AI & Mathematical Sciences
+**Sindh Madressatul Islam University (SMIU), Karachi**
 
----
-
-## 🎯 What This Project Does
-
-- Collects 11+ years of hourly weather data (2015–2026) for 20 cities across 6 continents from the Open-Meteo API
-- Engineers 54 features in 5 groups (temporal, lag, rolling, fusion, geographic)
-- Benchmarks **11 machine-learning models** (5 regression + 6 classification)
-- Selects the best model scientifically using cross-validation and computational-efficiency analysis
-- Explains predictions with **5 XAI methods**: SHAP, LIME, Permutation Feature Importance, Integrated Gradients, and GradCAM
-- Produces an honest **seasonal risk forecast** for summer 2026 disaster planning
+**Team:** Raiyan Sheikh · Syed Bilal  **Supervisor:** Syed Azeem Inam
 
 ---
 
-## 🏆 Key Results
+## 🚀 Live Dashboard
 
-| Task | Champion Model | Performance |
-|------|---------------|-------------|
-| Temperature regression | LightGBM | R² = 0.9965, RMSE = 0.65°C |
-| Heatwave detection | LightGBM (tuned) | F1 = 0.9942, AUC = 1.000 |
+The interactive dashboard is deployed on Streamlit Cloud. It fetches live weather data and generates fresh forecasts on demand.
 
----
+> Select any city to see its 30 / 60 / 90-day outlook across all four forecast targets, with interactive charts and an all-cities comparison.
 
-## 🤖 Models Benchmarked
-
-**Regression:** Ridge · Random Forest · XGBoost · LightGBM · CatBoost
-**Classification:** Logistic Regression · Random Forest · XGBoost · LightGBM · CatBoost · 1D-CNN (deep learning)
-
----
-
-## 🧠 Explainability (XAI)
-
-| Method | Type | Purpose |
-|--------|------|---------|
-| SHAP | Global + local | Feature contributions via game theory |
-| LIME | Local | Single-prediction explanations |
-| PFI | Global | Permutation-based importance |
-| Integrated Gradients | Local (neural) | Attribution for the CNN |
-| GradCAM | Local (neural) | Activation mapping for the CNN |
-
----
-
-## 🚀 Running the Dashboard
+To run locally:
 
 ```bash
 pip install -r requirements.txt
@@ -54,27 +24,93 @@ streamlit run app.py
 
 ---
 
-## 📂 Repository Structure
+## 📊 What It Does
 
-```
-├── app.py                    # Streamlit dashboard
-├── requirements.txt
-├── data/
-│   ├── dashboard_data.csv.gz # Compact data for the dashboard
-│   ├── *_results.json        # Model benchmark leaderboards
-│   └── table*.csv            # Forecast + experiment tables
-└── models/
-    ├── reg_lightgbm.pkl       # Champion regression model
-    ├── clf_heatwave_tuned.pkl # Champion heatwave model
-    └── feature_list.json
-```
+The system forecasts four targets at three horizons (30 / 60 / 90 days):
+
+| Target | Type | What it predicts |
+|--------|------|------------------|
+| 🌡️ Temperature | Regression | Daily mean temperature (°C) |
+| 🔥 Heatwave | Classification | Probability of a heatwave |
+| 🌧️ Heavy Rain | Classification | Probability of heavy rainfall (>10 mm) |
+| ⚠️ Disaster | Classification | Probability of any extreme event |
+
+**Champion model:** LightGBM (gradient boosting), selected after benchmarking six model families plus a Transformer.
 
 ---
 
-## 📊 Data Source
+## 🌍 Cities Covered
 
-Open-Meteo Historical Weather API (ERA5 reanalysis), 2015–2026, 20 cities, ~2 million hourly records.
+Ten cities spanning the full range of global climate zones, each with quality-controlled historical station data:
+
+| City | Climate Zone | City | Climate Zone |
+|------|-------------|------|-------------|
+| Lagos | Tropical | Miami | Subtropical |
+| Jakarta | Tropical | Phoenix | Arid |
+| Delhi | Subtropical | Chicago | Continental |
+| Madrid | Mediterranean | Moscow | Continental |
+| Sydney | Temperate | Rotterdam | Maritime |
 
 ---
 
-*This system is built for research and disaster-preparedness planning. Seasonal forecasts are probabilistic risk estimates, not exact predictions.*
+## 🧠 How It Works
+
+1. **Data** — Daily weather (2015–2026) from the Open-Meteo Archive API (ERA5 reanalysis), validated against real GHCN-Daily station observations.
+2. **Features** — 25 predictive features per forecast: rolling averages (7/30/90-day) of temperature, humidity, rainfall, wind and pressure, plus geographic and seasonal encodings.
+3. **Models** — Separate LightGBM models per target and horizon, trained leakage-free (predictors use only past information; targets are set in the future).
+4. **Forecasting** — Given recent weather up to today, the models project each target 30/60/90 days forward.
+5. **Dashboard** — A Streamlit app fetches live data, runs the models, and visualizes the results.
+
+---
+
+## 📈 Performance (Honest Reporting)
+
+Measured on held-out test data (cities seen during training):
+
+| Target | Metric | Score (90-day) |
+|--------|--------|----------------|
+| Temperature | R² | 0.91 |
+| Heatwave | F1 / AUC | 0.77 / 0.97 |
+| Disaster | F1 / AUC | 0.57 / 0.85 |
+| Rain | F1 / AUC | 0.32 / 0.78 |
+
+**Note on rainfall:** Long-range rainfall is inherently the hardest target — this is reported transparently rather than hidden. Temperature and heatwave are the most reliable outputs.
+
+The models were also benchmarked against a day-of-year **climatology baseline**: while climatology skill collapses with horizon (R² 0.81 → 0.08 at 90 days), the ML model maintains R² ≈ 0.91, demonstrating genuine dynamic forecast skill.
+
+---
+
+## 📁 Repository Contents
+
+| File | Description |
+|------|-------------|
+| `app.py` | The Streamlit dashboard |
+| `forecast_*.pkl` | Trained forecast models (4 targets × 3 horizons) |
+| `daily_forecast.csv.gz` | City metadata + processed daily data |
+| `feature_list.json` | Feature definitions |
+| `requirements.txt` | Python dependencies |
+| `*_results.csv`, `table*.csv` | Benchmarking, cross-validation & explainability results |
+
+---
+
+## 🛠️ Tech Stack
+
+- **Python** · **LightGBM** · **scikit-learn** · **pandas** · **NumPy**
+- **Streamlit** + **Plotly** (dashboard & visualizations)
+- **Data:** Open-Meteo (ERA5 reanalysis), GHCN-Daily station observations
+
+---
+
+## 📄 Data Attribution
+
+Weather data sourced from the [Open-Meteo Archive API](https://open-meteo.com/) (ERA5 reanalysis) and the [NOAA GHCN-Daily](https://www.ncei.noaa.gov/products/land-based-station/global-historical-climatology-network-daily) station network.
+
+---
+
+## ⚠️ Disclaimer
+
+This is an academic research and demonstration project. Forecasts are **not** official weather warnings and should not be used for operational or safety-critical decisions. For authoritative forecasts, consult your national meteorological service.
+
+---
+
+*© 2026 · Sindh Madressatul Islam University, Karachi*

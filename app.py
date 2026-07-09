@@ -133,9 +133,12 @@ def predict(models, X):
 # ── chart builders (transparent bg = adapts to any theme) ──────
 def base_layout(fig, h=330, title=None):
     fig.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-        height=h, margin=dict(l=10,r=10,t=42 if title else 16,b=10),
-        title=dict(text=title or "", font=dict(size=14)),
-        font=dict(color=CLR["txt"]), legend=dict(orientation="h",y=1.12),
+        height=h, margin=dict(l=10,r=10,t=70 if title else 40,b=10),
+        title=dict(text=title or "", font=dict(size=14), x=0.01, xanchor="left",
+                   y=0.97, yanchor="top"),
+        font=dict(color=CLR["txt"]),
+        legend=dict(orientation="h", yanchor="bottom", y=1.0, x=0,
+                    bgcolor="rgba(0,0,0,0)"),
         xaxis=dict(gridcolor=CLR["grid"],zeroline=False),
         yaxis=dict(gridcolor=CLR["grid"],zeroline=False))
     return fig
@@ -308,17 +311,9 @@ def main():
                         "Disaster %":round(p.get("disaster",0)*100)})
                 prog.progress((i+1)/len(CITIES),f"{c} done")
             dfc=pd.DataFrame(rows)
-            st.dataframe(
-                dfc, use_container_width=True, hide_index=True,
-                column_config={
-                    "Temp (°C)": st.column_config.NumberColumn("Temp (°C)", format="%.1f°"),
-                    "Heatwave %": st.column_config.ProgressColumn(
-                        "Heatwave %", format="%d%%", min_value=0, max_value=100),
-                    "Rain %": st.column_config.ProgressColumn(
-                        "Rain %", format="%d%%", min_value=0, max_value=100),
-                    "Disaster %": st.column_config.ProgressColumn(
-                        "Disaster %", format="%d%%", min_value=0, max_value=100),
-                })
+            st.dataframe(dfc.style.background_gradient(subset=["Temp (°C)"],cmap="RdYlBu_r")
+                         .background_gradient(subset=["Heatwave %","Rain %","Disaster %"],cmap="OrRd"),
+                         use_container_width=True,hide_index=True)
             fig=go.Figure(go.Bar(x=dfc["City"],y=dfc["Temp (°C)"],
                 marker=dict(color=dfc["Temp (°C)"],colorscale=[[0,CLR["rain"]],[1,CLR["temp"]]]),
                 text=dfc["Temp (°C)"],textposition="outside"))

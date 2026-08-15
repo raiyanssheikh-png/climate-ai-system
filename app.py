@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
 Climate AI — Live Multi-Horizon Weather Forecast Dashboard
-10 climate-diverse cities · 4 forecast targets · 30/60/90-day horizons
+10 station-verified cities (from the 20-city published study)
+4 forecast targets · 30/60/90-day horizons
 Authors: Raiyan Sheikh, Syed Bilal — Supervisor: Syed Azeem Inam (SMIU Karachi)
 """
 import streamlit as st
@@ -47,6 +48,12 @@ FEATURES = ['latitude','longitude','coastal','climate_zone_id','continent_id','c
             'pressure_roll7','pressure_roll30','pressure_roll90',
             'doy_sin','doy_cos','month','year']
 
+# ERA5 reanalysis in the Open-Meteo archive lags real time by roughly 5 days.
+# Requesting through "today" returns nulls at the tail, which silently corrupts
+# the 7-day rolling features. We therefore end the window before the lag.
+ERA5_LAG_DAYS = 6
+HISTORY_DAYS  = 126   # 120 usable days after the lag is trimmed
+
 # ── file discovery (flat repo OR laptop layout) ────────────────
 @st.cache_data
 def find_base():
@@ -80,7 +87,9 @@ def load_models(base):
 
 @st.cache_data(ttl=3600, show_spinner=False)
 def fetch_recent(lat, lon):
-    end=datetime.now().date(); start=end-timedelta(days=120)
+    """Fetch recent daily weather, ending before the ERA5 archive lag."""
+    end   = datetime.now().date() - timedelta(days=ERA5_LAG_DAYS)
+    start = end - timedelta(days=HISTORY_DAYS)
     url=("https://archive-api.open-meteo.com/v1/archive"
          f"?latitude={lat}&longitude={lon}&start_date={start}&end_date={end}"
          "&daily=temperature_2m_mean,relative_humidity_2m_mean,precipitation_sum,"
@@ -88,16 +97,21 @@ def fetch_recent(lat, lon):
     for a in range(4):
         try:
             d=requests.get(url,timeout=90).json().get("daily",{})
-            return pd.DataFrame({"date":pd.to_datetime(d.get("time",[])),
+            df=pd.DataFrame({"date":pd.to_datetime(d.get("time",[])),
                 "temp_mean":d.get("temperature_2m_mean",[]),
                 "humidity":d.get("relative_humidity_2m_mean",[]),
                 "precip_sum":d.get("precipitation_sum",[]),
                 "wind_max":d.get("windspeed_10m_max",[]),
                 "pressure":d.get("surface_pressure_mean",[])})
+            # Drop any unfilled tail so rolling windows are computed on real data
+            df = df.dropna(subset=["temp_mean"]).reset_index(drop=True)
+            return df if len(df) >= 30 else None
         except Exception: time.sleep(2*(a+1))
     return None
 
 def build_X(df, m):
+    # Forecast is ISSUED today, so seasonal encodings use today's date.
+    # Only the weather history window is shifted back for the ERA5 lag.
     today=pd.Timestamp(datetime.now().date()); doy=today.dayofyear
     df=df.sort_values("date")
     f=lambda c,n: float(df[c].tail(n).mean()); fs=lambda c,n: float(df[c].tail(n).sum())
@@ -164,8 +178,9 @@ def horizon_bars(pred, key, color, ylab):
 def main():
     base=find_base(); meta_p=find_meta(base)
     st.markdown('<div class="hdr">Climate AI — Live Weather Forecast</div>',unsafe_allow_html=True)
-    st.markdown(f'<div class="sub">30 / 60 / 90-day forecasts · 10 climate-diverse cities · '
-                f'{datetime.now().strftime("%d %b %Y")}</div>',unsafe_allow_html=True)
+    st.markdown(f'<div class="sub">30 / 60 / 90-day forecasts · '
+                f'10 station-verified cities (from the 20-city published study) · '
+                f'Issued {datetime.now().strftime("%d %b %Y")}</div>',unsafe_allow_html=True)
     if meta_p is None:
         st.error("daily_forecast.csv.gz not found next to app.py — upload it to the repo."); st.stop()
     try:
@@ -183,14 +198,20 @@ def main():
                    "🔥 Heatwave — strong\n\n"
                    "⚠️ Disaster — moderate\n\n"
                    "🌧️ Rain — hardest at long range")
-        st.caption("Live data: Open-Meteo (ERA5) · Models: LightGBM · Demo forecast, "
-                   "not an official warning.")
+        st.markdown("---")
+        st.caption("**Why 10 cities?**\n\n"
+                   "The published study benchmarks 20 cities on ERA5 reanalysis. "
+                   "This live demo covers the 10 that also passed station verification "
+                   "(GHCN station within 50 km and at least 1,500 observation-days).")
+        st.caption("Live data: Open-Meteo (ERA5) · Models: LightGBM · "
+                   "Academic demo, not an official warning.")
 
     with st.spinner(f"Fetching live weather for {city} and forecasting…"):
         m=meta.loc[city]; rec=fetch_recent(float(m["latitude"]),float(m["longitude"]))
         if rec is None or rec.empty:
-            st.error("Live fetch failed — try again shortly."); st.stop()
+            st.error("Live fetch failed or returned too little data — try again shortly."); st.stop()
         pred=predict(models, build_X(rec,m))
+        last_obs = rec["date"].max().date()
 
     # ── headline metrics: 4 parameter columns ──────────────────
     p30,p90=pred[30],pred[90]
@@ -215,6 +236,10 @@ def main():
         st.markdown(f'<p class="alert-live" style="color:{CLR["heatwave"]};text-align:center">'
                     f'● LIVE ALERT — elevated extreme-weather risk for {city}</p>',unsafe_allow_html=True)
 
+    st.caption(f"Latest available observation: {last_obs:%d %b %Y}. "
+               f"ERA5 reanalysis publishes with a short lag, so the history window ends there; "
+               f"forecast horizons are counted from today.")
+
     st.markdown("")
 
     # ── 4 tabs, 2 charts each ───────────────────────────────────
@@ -227,7 +252,7 @@ def main():
             fdates=[datetime.now().date()+timedelta(days=h) for h in [30,60,90]]
             ftemps=[pred[h]["temp"] for h in [30,60,90]]
             fig=go.Figure()
-            fig.add_trace(go.Scatter(x=hist["date"],y=hist["temp_mean"],name="Last 90 days (real)",
+            fig.add_trace(go.Scatter(x=hist["date"],y=hist["temp_mean"],name="Recent observed",
                 mode="lines",line=dict(color=CLR["rain"],width=2.4),
                 fill="tozeroy",fillcolor="rgba(77,171,247,.08)"))
             fig.add_trace(go.Scatter(x=fdates,y=ftemps,name="Forecast",
@@ -241,7 +266,7 @@ def main():
 
     with t2:
         a,b=st.columns([2,3])
-        with a:  # chart 1: animated-feel gauge (30d)
+        with a:  # chart 1: gauges
             st.plotly_chart(gauge(pred[30].get("heatwave",0),CLR["heatwave"],
                             "Heatwave probability (+30 days)"),use_container_width=True)
             st.plotly_chart(gauge(pred[90].get("heatwave",0),CLR["heatwave"],
@@ -260,7 +285,7 @@ def main():
             fig2=go.Figure(go.Bar(x=hot["date"],y=hot["hot"],marker_color=CLR["heatwave"],
                                   marker_line_width=0))
             fig2.update_yaxes(visible=False)
-            st.plotly_chart(base_layout(fig2,180,"Recent unusually-hot days (top 10% of last 120)"),
+            st.plotly_chart(base_layout(fig2,180,"Recent unusually-hot days (top 10% of window)"),
                             use_container_width=True)
 
     with t3:
@@ -268,15 +293,16 @@ def main():
         with a:  # chart 1: recent rainfall history
             fig=go.Figure(go.Bar(x=rec["date"],y=rec["precip_sum"],
                 marker_color=CLR["rain"],marker_line_width=0))
-            st.plotly_chart(base_layout(fig,340,"Daily rainfall — last 120 days (mm)"),
+            st.plotly_chart(base_layout(fig,340,"Daily rainfall — recent observed window (mm)"),
                             use_container_width=True)
         with b:  # chart 2: rain probability gauges
             st.plotly_chart(gauge(pred[30].get("rain",0),CLR["rain"],
                             "Heavy-rain probability (+30 days)"),use_container_width=True)
             st.plotly_chart(gauge(pred[90].get("rain",0),CLR["rain"],
                             "Heavy-rain probability (+90 days)"),use_container_width=True)
-        st.caption("Long-range rainfall is inherently the hardest target — treat probabilities "
-                   "as indicative, not definitive.")
+        st.caption("Long-range rainfall is the weakest target in this study "
+                   "(F1 = 0.32 at 90 days). Treat these probabilities as exploratory, "
+                   "not operational.")
 
     with t4:
         a,b=st.columns([2,3])
@@ -299,6 +325,8 @@ def main():
     # ── all-cities comparison ───────────────────────────────────
     st.markdown("---")
     with st.expander("🌐 Compare all 10 cities (90-day outlook)"):
+        st.caption("Fetches live data for every city. Run this once before a live "
+                   "demo — results are cached for an hour.")
         if st.button("Run comparison — fetches live data for all cities (~30s)"):
             prog=st.progress(0.0,"Fetching…"); rows=[]
             for i,c in enumerate(CITIES):
@@ -310,23 +338,27 @@ def main():
                         "Rain %":round(p.get("rain",0)*100),
                         "Disaster %":round(p.get("disaster",0)*100)})
                 prog.progress((i+1)/len(CITIES),f"{c} done")
-            dfc=pd.DataFrame(rows)
-            st.dataframe(
-                dfc, use_container_width=True, hide_index=True,
-                column_config={
-                    "Temp (°C)": st.column_config.NumberColumn("Temp (°C)", format="%.1f°"),
-                    "Heatwave %": st.column_config.ProgressColumn(
-                        "Heatwave %", format="%d%%", min_value=0, max_value=100),
-                    "Rain %": st.column_config.ProgressColumn(
-                        "Rain %", format="%d%%", min_value=0, max_value=100),
-                    "Disaster %": st.column_config.ProgressColumn(
-                        "Disaster %", format="%d%%", min_value=0, max_value=100),
-                })
-            fig=go.Figure(go.Bar(x=dfc["City"],y=dfc["Temp (°C)"],
-                marker=dict(color=dfc["Temp (°C)"],colorscale=[[0,CLR["rain"]],[1,CLR["temp"]]]),
-                text=dfc["Temp (°C)"],textposition="outside"))
-            st.plotly_chart(base_layout(fig,340,"90-day temperature forecast — all cities"),
-                            use_container_width=True)
+            if not rows:
+                st.warning("No cities returned data — check the connection and retry.")
+            else:
+                dfc=pd.DataFrame(rows)
+                st.dataframe(
+                    dfc, use_container_width=True, hide_index=True,
+                    column_config={
+                        "Temp (°C)": st.column_config.NumberColumn("Temp (°C)", format="%.1f°"),
+                        "Heatwave %": st.column_config.ProgressColumn(
+                            "Heatwave %", format="%d%%", min_value=0, max_value=100),
+                        "Rain %": st.column_config.ProgressColumn(
+                            "Rain %", format="%d%%", min_value=0, max_value=100),
+                        "Disaster %": st.column_config.ProgressColumn(
+                            "Disaster %", format="%d%%", min_value=0, max_value=100),
+                    })
+                fig=go.Figure(go.Bar(x=dfc["City"],y=dfc["Temp (°C)"],
+                    marker=dict(color=dfc["Temp (°C)"],
+                                colorscale=[[0,CLR["rain"]],[1,CLR["temp"]]]),
+                    text=dfc["Temp (°C)"],textposition="outside"))
+                st.plotly_chart(base_layout(fig,340,"90-day temperature forecast — all cities"),
+                                use_container_width=True)
 
     st.caption("Climate AI · SMIU Karachi · LightGBM multi-horizon forecasting · "
                "Live data from Open-Meteo (ERA5) · Academic demo — not an official weather warning.")
